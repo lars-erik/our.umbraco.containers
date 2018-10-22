@@ -109,10 +109,11 @@ namespace Our.Umbraco.Containers.Castle
 
         public void Register(Type serviceType, Lifetime lifetime = Lifetime.Transient)
         {
+            var registration = Component
+                .For(serviceType)
+                .LifeStyle.Is(lifetimes[lifetime]);
             container.Register(
-                Component
-                    .For(serviceType)
-                    .LifeStyle.Is(lifetimes[lifetime])
+                registration
             );
         }
 
