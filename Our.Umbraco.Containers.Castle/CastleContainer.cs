@@ -176,6 +176,15 @@ namespace Our.Umbraco.Containers.Castle
                     .Instance(instance));
         }
 
+        public void RegisterInstance(Type serviceType, object instance, string name)
+        {
+            container.Register(
+                Component
+                    .For(serviceType)
+                    .Named(name)
+                    .Instance(instance));
+        }
+
         public void RegisterAuto(Type serviceBaseType)
         {
             container.Register(
