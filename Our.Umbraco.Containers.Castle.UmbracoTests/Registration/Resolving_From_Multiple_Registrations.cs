@@ -1,12 +1,16 @@
-﻿using System;
-using System.Linq;
+﻿/***********************************************************************************************************
+ * LINKED FILE!
+ * ORIGINAL IN CASTLE TESTS!
+ ***********************************************************************************************************/
+
+using System;
 using NUnit.Framework;
 using Umbraco.Core.Composing;
-
-namespace Our.Umbraco.Containers.Castle.UmbracoTests.Defaults
+// ReSharper disable once CheckNamespace
+namespace Our.Umbraco.Containers.Tests.Registration
 {
     [TestFixture]
-    public class Defaults
+    public class Resolving_Abstractions_From_Multiple_Registrations
     {
         private IContainer container;
 
@@ -17,11 +21,11 @@ namespace Our.Umbraco.Containers.Castle.UmbracoTests.Defaults
         }
 
         [Test]
-        public void Multiple_Type_Without_Service_Is_Irrelevant()
+        public void Without_Registering_Service_Throws_InvalidOperationException()
         {
             container.Register(typeof(Concrete));
             container.Register(typeof(AnotherConcrete));
-            Assert.That(container.GetInstance(typeof(Concrete)), Is.InstanceOf<Concrete>());
+            Assert.That(() => container.GetInstance(typeof(IAbstraction)), Throws.InstanceOf<InvalidOperationException>());
         }
 
         private void RegisterServiceAndUnnamedTypes(Lifetime lifetime)
@@ -31,46 +35,41 @@ namespace Our.Umbraco.Containers.Castle.UmbracoTests.Defaults
         }
 
         [Test]
-        public void Service_And_Multiple_Type_Transient_Throws_InvalidOperation()
+        public void Transient_Throws_InvalidOperation()
         {
             RegisterServiceAndUnnamedTypes(Lifetime.Transient);
-            Assert.That(container.GetAllInstances(typeof(IAbstraction)), Has.Length.EqualTo(2));
             Assert.That(() => container.GetInstance(typeof(IAbstraction)), Throws.InstanceOf<InvalidOperationException>());
         }
 
         [Test]
-        public void Service_And_Multiple_Type_PerRequest_Removes_Previous_Registration()
+        public void PerRequest_Resolves_Last_Registered()
         {
             RegisterServiceAndUnnamedTypes(Lifetime.Request);
-            Assert.That(container.GetAllInstances(typeof(IAbstraction)), Has.Length.EqualTo(1));
             Assert.That(() => container.GetInstance(typeof(IAbstraction)), Is.InstanceOf<AnotherConcrete>());
         }
 
         [Test]
-        public void Service_And_Multiple_Type_Scoped_Removes_Previous_Registration()
+        public void Scoped_Resolves_Last_Registered()
         {
             RegisterServiceAndUnnamedTypes(Lifetime.Scope);
             using (container.BeginScope())
             { 
-                Assert.That(container.GetAllInstances(typeof(IAbstraction)), Has.Length.EqualTo(1));
                 Assert.That(() => container.GetInstance(typeof(IAbstraction)), Is.InstanceOf<AnotherConcrete>());
             }
         }
 
         [Test]
-        public void Service_And_Multiple_Type_Singleton_Removes_Previous_Registration()
+        public void Singleton_Resolves_Last_Registered()
         {
             RegisterServiceAndUnnamedTypes(Lifetime.Singleton);
-            Assert.That(container.GetAllInstances(typeof(IAbstraction)), Has.Length.EqualTo(1));
             Assert.That(container.GetInstance(typeof(IAbstraction)), Is.InstanceOf<AnotherConcrete>());
         }
 
         [Test]
-        public void Service_And_Multiple_Instances_Removes_Previous_Instance()
+        public void Instances_Resolves_Last_Registered()
         {
             container.RegisterInstance(typeof(IAbstraction), new Concrete());
             container.RegisterInstance(typeof(IAbstraction), new AnotherConcrete());
-            Assert.That(container.GetAllInstances(typeof(IAbstraction)), Has.Length.EqualTo(1));
             Assert.That(container.GetInstance(typeof(IAbstraction)), Is.InstanceOf<AnotherConcrete>());
         }
 
@@ -82,27 +81,26 @@ namespace Our.Umbraco.Containers.Castle.UmbracoTests.Defaults
 
         private void VerifyNamedResolves()
         {
-            Assert.That(container.GetAllInstances(typeof(IAbstraction)), Has.Length.EqualTo(2));
             Assert.That(() => container.GetInstance(typeof(IAbstraction), "Concrete"), Is.InstanceOf<Concrete>());
             Assert.That(() => container.GetInstance(typeof(IAbstraction), "AnotherConcrete"), Is.InstanceOf<AnotherConcrete>());
         }
 
         [Test]
-        public void Service_And_Multiple_Named_Type_Transient_Resolves_Types()
+        public void Named_Transient_Resolves_Types()
         {
             RegisterServiceAndNamedTypes(Lifetime.Transient);
             VerifyNamedResolves();
         }
 
         [Test]
-        public void Service_And_Multiple_Named_Type_PerRequest_Resolves_Types()
+        public void Named_PerRequest_Resolves_Types()
         {
             RegisterServiceAndNamedTypes(Lifetime.Request);
             VerifyNamedResolves();
         }
 
         [Test]
-        public void Service_And_Multiple_Named_Type_Scoped_Resolves_Types()
+        public void Named_Scoped_Resolves_Types()
         {
             RegisterServiceAndNamedTypes(Lifetime.Scope);
             using (container.BeginScope())
@@ -112,14 +110,14 @@ namespace Our.Umbraco.Containers.Castle.UmbracoTests.Defaults
         }
 
         [Test]
-        public void Service_And_Multiple_Named_Type_Singleton_Resolves_Types()
+        public void Named_Type_Singleton_Resolves_Types()
         {
             RegisterServiceAndNamedTypes(Lifetime.Singleton);
             VerifyNamedResolves();
         }
 
         [Test]
-        public void Service_And_Multiple_Named_Instances_Resolves_Types()
+        public void Named_Instances_Resolves_Types()
         {
             container.RegisterInstance(typeof(IAbstraction), new Concrete(), "Concrete");
             container.RegisterInstance(typeof(IAbstraction), new AnotherConcrete(), "AnotherConcrete");
@@ -127,27 +125,20 @@ namespace Our.Umbraco.Containers.Castle.UmbracoTests.Defaults
         }
 
         [Test]
-        public void Service_And_Multiple_Factories_Transient_Removes_Previous_Factory()
+        public void Factories_Transient_Resolves_Last_Registered()
         {
             container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()));
             container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()));
-            Assert.That(container.GetRegistered(typeof(IAbstraction)).ToArray(), Has.Length.EqualTo(1));
             Assert.That(container.GetInstance(typeof(IAbstraction)), Is.InstanceOf<AnotherConcrete>());
         }
-    }
 
-    public interface IAbstraction
-    {
-
-    }
-
-    public class Concrete : IAbstraction
-    {
-
-    }
-
-    public class AnotherConcrete : IAbstraction
-    {
-
+        [Test]
+        public void Named_Factories_Transient_Resolves_Types()
+        {
+            container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()), "Concrete");
+            container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()), "AnotherConcrete");
+            Assert.That(container.GetInstance(typeof(IAbstraction), "Concrete"), Is.InstanceOf<Concrete>());
+            Assert.That(container.GetInstance(typeof(IAbstraction), "AnotherConcrete"), Is.InstanceOf<AnotherConcrete>());
+        }
     }
 }

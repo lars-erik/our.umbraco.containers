@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.Remoting.MetadataServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -62,12 +63,26 @@ namespace Our.Umbraco.Containers.Castle
 
         public object GetInstance(Type type)
         {
-            return container.Resolve(type);
+            try
+            {
+                return container.Resolve(type);
+            }
+            catch (ComponentNotFoundException ex)
+            {
+                throw new InvalidOperationException("Could not find default instance of " + type.Name, ex);
+            }
         }
 
         public object GetInstance(Type type, string name)
         {
-            return container.Resolve(name, type);
+            try
+            {
+                return container.Resolve(name, type);
+            }
+            catch (ComponentNotFoundException ex)
+            {
+                throw new InvalidOperationException("Could not find instance of " + type.Name + " named " + name, ex);
+            }
         }
 
         // fixme - figure out what castle actually does vs. xml doc
@@ -107,34 +122,35 @@ namespace Our.Umbraco.Containers.Castle
             return container.Resolve(type, args);
         }
 
-        public void Register(Type serviceType, Lifetime lifetime = Lifetime.Transient)
+        private ComponentRegistration<object> NewDefault(Type serviceType, Lifetime lifetime, string name = null)
         {
             var registration = Component
                 .For(serviceType)
+                .IsDefault()
                 .LifeStyle.Is(lifetimes[lifetime]);
-            container.Register(
-                registration
-            );
+            if (name != null)
+                registration = registration.Named(name);
+            return registration;
+        }
+
+        public void Register(Type serviceType, Lifetime lifetime = Lifetime.Transient)
+        {
+            container.Register(NewDefault(serviceType, lifetime));
         }
 
         public void Register(Type serviceType, Type implementingType, Lifetime lifetime = Lifetime.Transient)
         {
             container.Register(
-                Component
-                    .For(serviceType)
+                NewDefault(serviceType, lifetime)
                     .ImplementedBy(implementingType)
-                    .LifeStyle.Is(lifetimes[lifetime])
             );
         }
 
         public void Register(Type serviceType, Type implementingType, string name, Lifetime lifetime = Lifetime.Transient)
         {
             container.Register(
-                Component
-                    .For(serviceType)
-                    .Named(name)
+                NewDefault(serviceType, lifetime, name)
                     .ImplementedBy(implementingType)
-                    .LifeStyle.Is(lifetimes[lifetime])
             );
         }
 
@@ -143,12 +159,12 @@ namespace Our.Umbraco.Containers.Castle
         public void Register<TService>(Func<IContainer, TService> factory, Lifetime lifetime = Lifetime.Transient)
         {
             container.Register(
-                Component
-                    .For(typeof(TService))
-                    .Named(typeof(TService).Name + "-impl-" + Guid.NewGuid().ToString("N"))
-                    .UsingFactory<IContainer, TService>(f => factory(this))
-                    .LifeStyle.Is(lifetimes[lifetime])
-                    .IsDefault()
+                NewDefault(
+                    typeof(TService),
+                    lifetime,
+                    typeof(TService).Name + "-impl-" + Guid.NewGuid().ToString("N")
+                )
+                .UsingFactory<IContainer, TService>(f => factory(this))
             );
 
         }
@@ -158,12 +174,12 @@ namespace Our.Umbraco.Containers.Castle
         public void Register<TService>(Func<IContainer, TService> factory, string name, Lifetime lifetime = Lifetime.Transient)
         {
             container.Register(
-                Component
-                    .For(typeof(TService))
-                    .UsingFactory<IContainer, TService>(f => factory(this))
-                    .Named(name)
-                    .LifeStyle.Is(lifetimes[lifetime])
-                    .IsDefault()
+                NewDefault(
+                    typeof(TService),
+                    lifetime,
+                    name
+                )
+                .UsingFactory<IContainer, TService>(f => factory(this))
             );
 
         }
@@ -171,18 +187,17 @@ namespace Our.Umbraco.Containers.Castle
         public void RegisterInstance(Type serviceType, object instance)
         {
             container.Register(
-                Component
-                    .For(serviceType)
-                    .Instance(instance));
+                NewDefault(serviceType, Lifetime.Singleton)
+                    .Instance(instance)
+            );
         }
 
         public void RegisterInstance(Type serviceType, object instance, string name)
         {
             container.Register(
-                Component
-                    .For(serviceType)
-                    .Named(name)
-                    .Instance(instance));
+                NewDefault(serviceType, Lifetime.Singleton, name)
+                    .Instance(instance)
+            );
         }
 
         public void RegisterAuto(Type serviceBaseType)
@@ -200,10 +215,8 @@ namespace Our.Umbraco.Containers.Castle
             foreach (var type in implementingTypes)
             {
                 container.Register(
-                    Component
-                        .For(serviceType)
+                    NewDefault(serviceType, lifetime)
                         .ImplementedBy(type)
-                        .LifeStyle.Is(lifetimes[lifetime])
                 );
             }
         }
