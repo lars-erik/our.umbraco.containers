@@ -145,5 +145,20 @@ namespace Our.Umbraco.Containers.Tests.Registration
             container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()), "AnotherConcrete");
             AssertException<InvalidOperationException>();
         }
+
+        [Test]
+        [TestCase(Lifetime.Transient)]
+        [TestCase(Lifetime.Scope)]
+        [TestCase(Lifetime.Singleton)]
+        [TestCase(Lifetime.Request)]
+        public void Overwritten_Named_Concrete_Registrations_Replace_Existing(Lifetime lifetime)
+        {
+            container.Register(typeof(IAbstraction), typeof(Concrete), "Name", lifetime);
+            container.Register(typeof(IAbstraction), typeof(AnotherConcrete), "Name", lifetime);
+            using (container.BeginScope())
+            { 
+                AssertDefaultInstance<AnotherConcrete>();
+            }
+        }
     }
 }

@@ -42,6 +42,10 @@
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="NPoco, Version=3.9.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Umbraco-CMS\src\Umbraco.Tests\bin\Debug\NPoco.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -89,7 +93,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CastleContainer.cs" />
+    <Compile Include="CastleWindsorComponent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RemovableNamingSubsystem.cs" />
+    <Compile Include="RemovalExtensions.cs" />
+    <Compile Include="WindsorCompositionRoot.cs" />
+    <Compile Include="WindsorControllerFactory.cs" />
+    <Compile Include="WindsorDependencyResolver.cs" />
+    <Compile Include="WindsorDependencyScope.cs" />
+    <Compile Include="WindsorWebApiDependencyResolver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

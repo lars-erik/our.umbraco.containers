@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.Remoting.MetadataServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Http;
-using System.Web.Http.Controllers;
-using System.Web.Http.Dependencies;
 using System.Web.Http.Dispatcher;
-using System.Web.Mvc;
-using System.Web.Routing;
 using Castle.Core;
 using Castle.MicroKernel;
 using Castle.MicroKernel.Lifestyle;
@@ -21,10 +15,7 @@ using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using Castle.Windsor.Diagnostics.Helpers;
 using Castle.Windsor.Installer;
-using Umbraco.Core.Components;
 using Umbraco.Core.Composing;
-using Umbraco.Web.Mvc;
-using IDependencyResolver = System.Web.Mvc.IDependencyResolver;
 
 namespace Our.Umbraco.Containers.Castle
 {
@@ -124,6 +115,14 @@ namespace Our.Umbraco.Containers.Castle
 
         private ComponentRegistration<object> NewDefault(Type serviceType, Lifetime lifetime, string name = null)
         {
+            if (!String.IsNullOrEmpty(name))
+            {
+                if (container.Kernel.HasComponent(name))
+                {
+                    container.RemoveHandler(name);
+                }
+            }
+
             var registration = Component
                 .For(serviceType)
                 .IsDefault()
@@ -249,188 +248,6 @@ namespace Our.Umbraco.Containers.Castle
         public IContainer EnablePerWebRequestScope()
         {
             return this;
-        }
-    }
-
-    public class CastleWindsorComponent : IUmbracoUserComponent
-    {
-        public void Compose(Composition composition)
-        {
-
-        }
-
-        public Type InitializerType => typeof(CastleInitializer);
-
-        public class CastleInitializer : IComponentInitializer
-        {
-            private readonly IContainer container;
-
-            public CastleInitializer(IContainer container)
-            {
-                this.container = container;
-            }
-
-            public void Initialize()
-            {
-                //container.GetInstance<FilteredControllerFactoryCollectionBuilder>()
-                //    .Insert<WindsorControllerFactory>();
-            }
-        }
-
-        public void Terminate()
-        {
-        }
-    }
-
-    public class WindsorCompositionRoot : IHttpControllerActivator
-    {
-        private readonly IWindsorContainer container;
-
-        public WindsorCompositionRoot(IWindsorContainer container)
-        {
-            this.container = container;
-        }
-
-        public IHttpController Create(
-            HttpRequestMessage request,
-            HttpControllerDescriptor controllerDescriptor,
-            Type controllerType)
-        {
-            var controller =
-                (IHttpController)this.container.Resolve(controllerType);
-
-            request.RegisterForDispose(
-                new Release(
-                    () => this.container.Release(controller)));
-
-            return controller;
-        }
-
-        private class Release : IDisposable
-        {
-            private readonly Action release;
-
-            public Release(Action release)
-            {
-                this.release = release;
-            }
-
-            public void Dispose()
-            {
-                this.release();
-            }
-        }
-    }
-
-    public class WindsorWebApiDependencyResolver : System.Web.Http.Dependencies.IDependencyResolver
-    {
-        private readonly IWindsorContainer container;
-
-        public WindsorWebApiDependencyResolver(IWindsorContainer container)
-        {
-            this.container = container;
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public object GetService(Type serviceType)
-        {
-            return container.Resolve(serviceType);
-        }
-
-        public IEnumerable<object> GetServices(Type serviceType)
-        {
-            return container.ResolveAll(serviceType).Cast<object>();
-        }
-
-        public IDependencyScope BeginScope()
-        {
-            return new WindsorDependencyScope(container);
-        }
-    }
-
-    internal sealed class WindsorDependencyScope : IDependencyScope
-    {
-        private readonly IWindsorContainer _container;
-        private readonly IDisposable _scope;
-
-        public WindsorDependencyScope(IWindsorContainer container)
-        {
-            if (container == null)
-            {
-                throw new ArgumentNullException("container");
-            }
-            _container = container;
-            _scope = container.BeginScope();
-        }
-
-        public object GetService(Type t)
-        {
-            return _container.Kernel.HasComponent(t) ? _container.Resolve(t) : null;
-        }
-
-        public IEnumerable<object> GetServices(Type t)
-        {
-            return _container.ResolveAll(t).Cast<object>().ToArray();
-        }
-
-        public void Dispose()
-        {
-            _scope.Dispose();
-        }
-    }
-
-    public class WindsorDependencyResolver : IDependencyResolver
-    {
-        private readonly WindsorContainer container;
-
-        public WindsorDependencyResolver(WindsorContainer container)
-        {
-            this.container = container;
-        }
-
-        public object GetService(Type serviceType)
-        {
-            return container.Resolve(serviceType);
-        }
-
-        public IEnumerable<object> GetServices(Type serviceType)
-        {
-            return container.ResolveAll(serviceType).Cast<object>();
-        }
-    }
-
-    /// <summary>
-    /// Possibly not needed at all?
-    /// </summary>
-    public class WindsorControllerFactory : DefaultControllerFactory, IFilteredControllerFactory
-    {
-        private readonly IContainer container;
-
-        public WindsorControllerFactory(IContainer container)
-        {
-            this.container = container;
-        }
-
-        public bool CanHandle(RequestContext request)
-        {
-            return true;
-        }
-
-        public override void ReleaseController(IController controller)
-        {
-            ((WindsorContainer)container.ConcreteContainer).Kernel.ReleaseComponent(controller);
-        }
-
-        protected override IController GetControllerInstance(RequestContext requestContext, Type controllerType)
-        {
-            if (controllerType == null)
-            {
-                throw new HttpException(404, string.Format("The controller for path '{0}' could not be found.", requestContext.HttpContext.Request.Path));
-            }
-            return (IController)container.GetInstance(controllerType);
         }
     }
 }
