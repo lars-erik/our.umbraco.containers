@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.MetadataServices;
@@ -25,6 +26,7 @@ namespace Our.Umbraco.Containers.Castle
         public static IContainer Create()
         {
             var castleContainer = new CastleContainer();
+            castleContainer.RegisterInstance<IContainer>(castleContainer);
             return castleContainer;
         }
 
@@ -79,7 +81,33 @@ namespace Our.Umbraco.Containers.Castle
         // fixme - figure out what castle actually does vs. xml doc
         public object TryGetInstance(Type type)
         {
-            return container.Resolve(type);
+            try
+            {
+                return container.Resolve(type);
+            }
+            catch(Exception ex)
+            {
+                try
+                {
+                    if (typeof(IEnumerable).IsAssignableFrom(type))
+                    {
+                        if (type.GenericTypeArguments.Length == 1)
+                        {
+                            var result = GetAllInstances(type.GenericTypeArguments[0]);
+                            if (result != null && result.Any())
+                            {
+                                return result;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex2)
+                {
+                    throw new InvalidOperationException("Could not find default instance of " + type.Name, ex);
+                }
+
+                throw new InvalidOperationException("Could not find instance of " + type.Name);
+            }
         }
 
         public IEnumerable<object> GetAllInstances(Type serviceType)
@@ -105,12 +133,6 @@ namespace Our.Umbraco.Containers.Castle
             return container.Kernel.GetAssignableHandlers(typeof(object))
                 .Select(x => new Registration(x.ComponentModel.Services.First(), x.ComponentModel.Name));
 
-        }
-
-        // fixme - Refactor to use Dictionary. Castle does not support nameless parameters. !?!?
-        public object CreateInstance(Type type, IDictionary<string, object> args)
-        {
-            return container.Resolve(type, args);
         }
 
         private ComponentRegistration<object> NewDefault(Type serviceType, Lifetime lifetime, string name = null)
