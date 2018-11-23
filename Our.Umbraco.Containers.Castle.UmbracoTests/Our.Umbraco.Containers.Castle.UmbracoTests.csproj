@@ -88,6 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Registration\AnotherConcrete.cs" />
+    <Compile Include="Registration\CompositeConcrete.cs" />
     <Compile Include="Registration\Concrete.cs" />
     <Compile Include="Registration\IAbstraction.cs" />
     <Compile Include="Registration\Resolving_Default_Abstractions_From_Multiple_Registrations.cs" />

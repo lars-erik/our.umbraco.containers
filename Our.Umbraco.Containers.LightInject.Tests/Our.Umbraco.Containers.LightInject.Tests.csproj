@@ -90,6 +90,9 @@
     <Compile Include="..\Our.Umbraco.Containers.Castle.UmbracoTests\Registration\AnotherConcrete.cs">
       <Link>Registration\AnotherConcrete.cs</Link>
     </Compile>
+    <Compile Include="..\Our.Umbraco.Containers.Castle.UmbracoTests\Registration\CompositeConcrete.cs">
+      <Link>Registration\CompositeConcrete.cs</Link>
+    </Compile>
     <Compile Include="..\Our.Umbraco.Containers.Castle.UmbracoTests\Registration\Concrete.cs">
       <Link>Registration\Concrete.cs</Link>
     </Compile>
@@ -101,6 +104,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Registration\Multiple_Abstraction_Registration_Counts.cs" />
+    <Compile Include="Registration\Multiple_Named.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

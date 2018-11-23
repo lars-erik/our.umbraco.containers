@@ -18,7 +18,6 @@ namespace Our.Umbraco.Containers.Tests.Registration
         public void Setup()
         {
             container = ContainerFactory.Create();
-            container.RegisterInstance(container);
         }
 
         private void AssertDefaultInstance<TExpected>()
@@ -85,80 +84,12 @@ namespace Our.Umbraco.Containers.Tests.Registration
             AssertDefaultInstance<AnotherConcrete>();
         }
 
-        private void RegisterServiceAndNamedTypes(Lifetime lifetime)
-        {
-            container.Register(typeof(IAbstraction), typeof(Concrete), "Concrete", lifetime);
-            container.Register(typeof(IAbstraction), typeof(AnotherConcrete), "AnotherConcrete", lifetime);
-        }
-
-        [Test]
-        public void Named_Transient_Throws_InvalidOperationException()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Transient);
-            AssertException<InvalidOperationException>();
-        }
-
-        [Test]
-        public void Named_PerRequest_Throws_InvalidOperationException()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Request);
-            AssertException<InvalidOperationException>();
-        }
-
-        [Test]
-        public void Named_Scoped_Throws_InvalidOperationException()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Scope);
-            using (container.BeginScope())
-            {
-                AssertException<InvalidOperationException>();
-            }
-        }
-
-        [Test]
-        public void Named_Type_Singleton_Throws_InvalidOperationException()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Singleton);
-            AssertException<InvalidOperationException>();
-        }
-
-        [Test]
-        public void Named_Instances_Throws_InvalidOperationException()
-        {
-            container.RegisterInstance(typeof(IAbstraction), new Concrete(), "Concrete");
-            container.RegisterInstance(typeof(IAbstraction), new AnotherConcrete(), "AnotherConcrete");
-            AssertException<InvalidOperationException>();
-        }
-
         [Test]
         public void Factories_Transient_Resolves_Last_Registered()
         {
             container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()));
             container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()));
             AssertDefaultInstance<AnotherConcrete>();
-        }
-
-        [Test]
-        public void Named_Factories_Transient_Throws_InvalidOperationException()
-        {
-            container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()), "Concrete");
-            container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()), "AnotherConcrete");
-            AssertException<InvalidOperationException>();
-        }
-
-        [Test]
-        [TestCase(Lifetime.Transient)]
-        [TestCase(Lifetime.Scope)]
-        [TestCase(Lifetime.Singleton)]
-        [TestCase(Lifetime.Request)]
-        public void Overwritten_Named_Concrete_Registrations_Replace_Existing(Lifetime lifetime)
-        {
-            container.Register(typeof(IAbstraction), typeof(Concrete), "Name", lifetime);
-            container.Register(typeof(IAbstraction), typeof(AnotherConcrete), "Name", lifetime);
-            using (container.BeginScope())
-            { 
-                AssertDefaultInstance<AnotherConcrete>();
-            }
         }
     }
 }

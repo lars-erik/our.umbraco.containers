@@ -72,65 +72,12 @@ namespace Our.Umbraco.Containers.Castle.UmbracoTests.Registration
             VerifyRegisteredCount(1);
         }
 
-        private void RegisterServiceAndNamedTypes(Lifetime lifetime)
-        {
-            container.Register(typeof(IAbstraction), typeof(Concrete), "Concrete", lifetime);
-            container.Register(typeof(IAbstraction), typeof(AnotherConcrete), "AnotherConcrete", lifetime);
-        }
-
-        [Test]
-        public void Named_Transient_Leaves_All()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Transient);
-            VerifyRegisteredCount(2);
-        }
-
-        [Test]
-        public void Named_PerRequest_Leaves_All()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Request);
-            VerifyRegisteredCount(2);
-        }
-
-        [Test]
-        public void Named_Scoped_Leaves_All()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Scope);
-            using (container.BeginScope())
-            {
-                VerifyRegisteredCount(2);
-            }
-        }
-
-        [Test]
-        public void Named_Singleton_Leaves_All()
-        {
-            RegisterServiceAndNamedTypes(Lifetime.Singleton);
-            VerifyRegisteredCount(2);
-        }
-
-        [Test]
-        public void Named_Instances_Leaves_All()
-        {
-            container.RegisterInstance(typeof(IAbstraction), new Concrete(), "Concrete");
-            container.RegisterInstance(typeof(IAbstraction), new AnotherConcrete(), "AnotherConcrete");
-            VerifyRegisteredCount(2);
-        }
-
         [Test]
         public void Factories_Transient_Leaves_One()
         {
             container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()));
             container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()));
             VerifyRegisteredCount(1);
-        }
-
-        [Test]
-        public void Named_Factories_Transient_Leaves_All()
-        {
-            container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()), "Concrete");
-            container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()), "AnotherConcrete");
-            VerifyRegisteredCount(2);
         }
     }
 }
