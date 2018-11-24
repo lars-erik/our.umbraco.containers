@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{68C11DFC-0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Our.Umbraco.Containers.LightInject.Tests", "Our.Umbraco.Containers.LightInject.Tests\Our.Umbraco.Containers.LightInject.Tests.csproj", "{37A28CB8-DEB2-4546-A1C4-EF9688190BAF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Our.Umbraco.Containers.MS.DI", "Our.Umbraco.Containers.MS.DI\Our.Umbraco.Containers.MS.DI.csproj", "{55A14209-8080-4B4B-8623-6757B6866B7C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +39,10 @@ Global
 		{37A28CB8-DEB2-4546-A1C4-EF9688190BAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37A28CB8-DEB2-4546-A1C4-EF9688190BAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37A28CB8-DEB2-4546-A1C4-EF9688190BAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55A14209-8080-4B4B-8623-6757B6866B7C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55A14209-8080-4B4B-8623-6757B6866B7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55A14209-8080-4B4B-8623-6757B6866B7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55A14209-8080-4B4B-8623-6757B6866B7C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
