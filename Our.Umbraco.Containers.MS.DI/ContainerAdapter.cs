@@ -9,11 +9,28 @@ namespace Our.Umbraco.Containers.MS.DI
     public class ContainerAdapter : IContainer
     {
         private readonly IServiceCollection services;
+        public static IContainer Create()
+        {
+            var msDiContainer = new ContainerAdapter();
+            msDiContainer.RegisterInstance<IContainer>(msDiContainer);
+            return msDiContainer;
+        }
+
         private ServiceProvider container;
 
         public ContainerAdapter()
         {
             services = new ServiceCollection();
+
+            services.AddTransient(typeof(Lazy<>), typeof(Lazier<>));
+        }
+
+        internal class Lazier<T> : Lazy<T> where T : class
+        {
+            public Lazier(IServiceProvider provider)
+                : base(() => provider.GetRequiredService<T>())
+            {
+            }
         }
 
         public void Dispose()
@@ -32,6 +49,11 @@ namespace Our.Umbraco.Containers.MS.DI
 
                 return container;
             }
+        }
+
+        private void Reset()
+        {
+            container = null;
         }
 
         public object GetInstance(Type type)
@@ -56,7 +78,9 @@ namespace Our.Umbraco.Containers.MS.DI
 
         public IEnumerable<Registration> GetRegistered(Type serviceType)
         {
-            return services.Select(x => new Registration(x.ServiceType, x.ImplementationType.Name));
+            return services
+                .Where(x => serviceType.IsAssignableFrom(x.ServiceType))
+                .Select(x => new Registration(x.ImplementationType ?? x.ServiceType, x.ImplementationType?.Name ?? x.ServiceType?.Name));
         }
 
         public void Release(object instance)
@@ -75,27 +99,36 @@ namespace Our.Umbraco.Containers.MS.DI
 
         public void Register(Type serviceType, Lifetime lifetime = Lifetime.Transient)
         {
+            Reset();
             services.Add(new ServiceDescriptor(serviceType, serviceType, lifetimes[lifetime]));
         }
 
         public void Register(Type serviceType, Type implementingType, Lifetime lifetime = Lifetime.Transient)
         {
+            Reset();
             services.Add(new ServiceDescriptor(serviceType, implementingType, lifetimes[lifetime]));
         }
 
         public void Register<TService>(Func<IContainer, TService> factory, Lifetime lifetime = Lifetime.Transient)
         {
+            Reset();
             services.Add(new ServiceDescriptor(typeof(TService), sp => factory(this), lifetimes[lifetime]));
         }
 
         public void RegisterInstance(Type serviceType, object instance)
         {
+            Reset();
             services.Add(new ServiceDescriptor(serviceType, instance));
         }
 
         public void RegisterAuto(Type serviceBaseType)
         {
-            throw new NotImplementedException();
+            Reset();
+            services.Scan(scan => 
+                scan.FromApplicationDependencies()
+                    .AddClasses(x => x.AssignableTo(serviceBaseType))
+                    .AsImplementedInterfaces()
+            );
         }
 
         public IDisposable BeginScope()
