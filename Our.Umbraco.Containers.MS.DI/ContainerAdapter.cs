@@ -63,7 +63,14 @@ namespace Our.Umbraco.Containers.MS.DI
 
         public object TryGetInstance(Type type)
         {
-            return ServiceProvider.GetService(type);
+            try
+            {
+                return ServiceProvider.GetService(type);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public IEnumerable<object> GetAllInstances(Type serviceType)

@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\NUnit.3.11.0\build\NUnit.props" Condition="Exists('..\packages\NUnit.3.11.0\build\NUnit.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{EEA7957D-5CDE-4ECF-BB71-9634AC2D549E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Our.Umbraco.Containers.MS.DI.Tests</RootNamespace>
+    <AssemblyName>Our.Umbraco.Containers.MS.DI.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework, Version=3.11.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.11.0\lib\net45\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Umbraco.Core">
+      <HintPath>..\..\Umbraco-CMS\src\Umbraco.Tests\bin\Debug\Umbraco.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Umbraco.Tests">
+      <HintPath>..\..\Umbraco-CMS\src\Umbraco.Tests\bin\Debug\Umbraco.Tests.dll</HintPath>
+    </Reference>
+    <Reference Include="Umbraco.Web">
+      <HintPath>..\..\Umbraco-CMS\src\Umbraco.Tests\bin\Debug\Umbraco.Web.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Our.Umbraco.Containers.Castle.UmbracoTests\Registration\AnotherConcrete.cs">
+      <Link>AnotherConcrete.cs</Link>
+    </Compile>
+    <Compile Include="..\Our.Umbraco.Containers.Castle.UmbracoTests\Registration\CompositeConcrete.cs">
+      <Link>CompositeConcrete.cs</Link>
+    </Compile>
+    <Compile Include="..\Our.Umbraco.Containers.Castle.UmbracoTests\Registration\Concrete.cs">
+      <Link>Concrete.cs</Link>
+    </Compile>
+    <Compile Include="..\Our.Umbraco.Containers.Castle.UmbracoTests\Registration\IAbstraction.cs">
+      <Link>IAbstraction.cs</Link>
+    </Compile>
+    <Compile Include="Multiple_Abstraction_Registration_Counts.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Configurations\DashboardSettings\Dashboard.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Configurations\DashboardSettings\web.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Configurations\UmbracoSettings\umbracoSettings.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Configurations\UmbracoSettings\umbracoSettings.minimal.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Configurations\UmbracoSettings\web.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Packaging\Packages\Document_Type_Picker_1.1.umb" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Our.Umbraco.Containers.MS.DI\Our.Umbraco.Containers.MS.DI.csproj">
+      <Project>{55a14209-8080-4b4b-8623-6757b6866b7c}</Project>
+      <Name>Our.Umbraco.Containers.MS.DI</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\NUnit.3.11.0\build\NUnit.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit.3.11.0\build\NUnit.props'))" />
+  </Target>
+</Project>

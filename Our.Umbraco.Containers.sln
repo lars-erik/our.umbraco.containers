@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Our.Umbraco.Containers.Ligh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Our.Umbraco.Containers.MS.DI", "Our.Umbraco.Containers.MS.DI\Our.Umbraco.Containers.MS.DI.csproj", "{55A14209-8080-4B4B-8623-6757B6866B7C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Our.Umbraco.Containers.MS.DI.Tests", "Our.Umbraco.Containers.MS.DI.Tests\Our.Umbraco.Containers.MS.DI.Tests.csproj", "{EEA7957D-5CDE-4ECF-BB71-9634AC2D549E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +44,10 @@ Global
 		{55A14209-8080-4B4B-8623-6757B6866B7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55A14209-8080-4B4B-8623-6757B6866B7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55A14209-8080-4B4B-8623-6757B6866B7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEA7957D-5CDE-4ECF-BB71-9634AC2D549E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEA7957D-5CDE-4ECF-BB71-9634AC2D549E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEA7957D-5CDE-4ECF-BB71-9634AC2D549E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEA7957D-5CDE-4ECF-BB71-9634AC2D549E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
