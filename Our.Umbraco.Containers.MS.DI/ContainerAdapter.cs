@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Umbraco.Core.Composing;
@@ -23,6 +24,7 @@ namespace Our.Umbraco.Containers.MS.DI
     public class ContainerAdapter : IRegister, IFactory, IDisposable
     {
         private readonly IServiceCollection services;
+        private readonly Stack<ScopeWrapper> scopes = new Stack<ScopeWrapper>();
 
         public static IRegister Create()
         {
@@ -75,7 +77,7 @@ namespace Our.Umbraco.Containers.MS.DI
             
         }
 
-        private ServiceProvider ServiceProvider
+        private IServiceProvider ServiceProvider
         {
             get
             {
@@ -90,19 +92,39 @@ namespace Our.Umbraco.Containers.MS.DI
                     concrete = new ConcreteMsDi(services, container);
                 }
 
+                if (scopes.Any())
+                {
+                    return scopes.Peek();
+                }
+
                 return container;
             }
         }
 
         private void Reset()
         {
-            // With this we can 
             container = null;
         }
 
         public object CreateWithParameters(Type type, object[] args)
         {
-            return ServiceProvider.GetService(type);
+            var ctor = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public)
+                .OrderByDescending(x => x.GetParameters().Length).FirstOrDefault();
+            if (ctor == null)
+                throw new InvalidOperationException($"Could not find a public constructor for type {type.FullName}.");
+
+            var ctorParameters = ctor.GetParameters();
+            var ctorArgs = new object[ctorParameters.Length];
+            var i = 0;
+            foreach (var parameter in ctorParameters)
+            {
+                // no! IsInstanceOfType is not ok here
+                // ReSharper disable once UseMethodIsInstanceOfType
+                var arg = args?.FirstOrDefault(a => parameter.ParameterType.IsAssignableFrom(a.GetType()));
+                ctorArgs[i++] = arg ?? GetInstance(parameter.ParameterType);
+            }
+
+            return ctor.Invoke(ctorArgs);
         }
 
         public object GetInstance(Type type)
@@ -198,7 +220,10 @@ namespace Our.Umbraco.Containers.MS.DI
 
         public IDisposable BeginScope()
         {
-            return ServiceProvider.CreateScope();
+            var scope = ServiceProvider.CreateScope();
+            var wrapper = new ScopeWrapper(scope, this);
+            scopes.Push(wrapper);
+            return wrapper;
         }
 
         public void ConfigureForWeb()
@@ -211,5 +236,29 @@ namespace Our.Umbraco.Containers.MS.DI
             // TODO: Figure any dependency;
         }
 
+        class ScopeWrapper : IServiceProvider, IDisposable
+        {
+            private IServiceScope scope;
+            private readonly ContainerAdapter adapter;
+            private IServiceProvider provider;
+
+            public ScopeWrapper(IServiceScope scope, ContainerAdapter adapter)
+            {
+                this.scope = scope;
+                this.adapter = adapter;
+                this.provider = scope.ServiceProvider;
+            }
+
+            public void Dispose()
+            {
+                scope.Dispose();
+                adapter.scopes.Pop();
+            }
+
+            public object GetService(Type serviceType)
+            {
+                return provider.GetService(serviceType);
+            }
+        }
     }
 }
