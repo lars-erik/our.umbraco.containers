@@ -9,31 +9,35 @@ namespace Our.Umbraco.Containers.MS.DI.Tests
     [TestFixture]
     public class Multiple_Abstraction_Registration_Counts
     {
-        private IContainer container;
+        private IRegister register;
+        private IFactory factory;
+
+        public IFactory Factory => factory ?? (factory = register.CreateFactory());
 
         [SetUp]
         public void Setup()
         {
-            container = ContainerFactory.Create();
+            register = RegisterFactory.Create();
+            factory = null;
         }
 
         private void VerifyRegisteredCount(int expected)
         {
-            Assert.That(container.GetRegistered<IAbstraction>().ToArray(), Has.Length.EqualTo(expected));
+            Assert.That(Factory.GetAllInstances<IAbstraction>().ToArray(), Has.Length.EqualTo(expected));
         }
 
         [Test]
         public void Without_Registering_Service_Leaves_Zero()
         {
-            container.Register(typeof(Concrete));
-            container.Register(typeof(AnotherConcrete));
+            register.Register(typeof(Concrete));
+            register.Register(typeof(AnotherConcrete));
             VerifyRegisteredCount(0);
         }
 
         private void RegisterServiceAndUnnamedTypes(Lifetime lifetime)
         {
-            container.Register(typeof(IAbstraction), typeof(Concrete), lifetime);
-            container.Register(typeof(IAbstraction), typeof(AnotherConcrete), lifetime);
+            register.Register(typeof(IAbstraction), typeof(Concrete), lifetime);
+            register.Register(typeof(IAbstraction), typeof(AnotherConcrete), lifetime);
         }
 
         [Test]
@@ -54,7 +58,10 @@ namespace Our.Umbraco.Containers.MS.DI.Tests
         public void Scoped_Leaves_One()
         {
             RegisterServiceAndUnnamedTypes(Lifetime.Scope);
-            VerifyRegisteredCount(1);
+            using (Factory.BeginScope())
+            { 
+                VerifyRegisteredCount(1);
+            }
         }
 
         [Test]
@@ -67,16 +74,16 @@ namespace Our.Umbraco.Containers.MS.DI.Tests
         [Test]
         public void Instances_Leaves_One()
         {
-            container.RegisterInstance(typeof(IAbstraction), new Concrete());
-            container.RegisterInstance(typeof(IAbstraction), new AnotherConcrete());
+            register.RegisterInstance(typeof(IAbstraction), new Concrete());
+            register.RegisterInstance(typeof(IAbstraction), new AnotherConcrete());
             VerifyRegisteredCount(1);
         }
 
         [Test]
         public void Factories_Transient_Leaves_One()
         {
-            container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()));
-            container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()));
+            register.Register((Func<IFactory, IAbstraction>)(c => new Concrete()));
+            register.Register((Func<IFactory, IAbstraction>)(c => new AnotherConcrete()));
             VerifyRegisteredCount(1);
         }
     }

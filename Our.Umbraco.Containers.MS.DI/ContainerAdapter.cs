@@ -2,19 +2,43 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyModel;
 using Umbraco.Core.Composing;
+using Umbraco.Core.Exceptions;
 
 namespace Our.Umbraco.Containers.MS.DI
 {
-    public class ContainerAdapter : IContainer
+    public class ConcreteMsDi
+    {
+        public IServiceCollection ServiceCollection { get; set; }
+        public IServiceProvider Provider { get; set; }
+
+        public ConcreteMsDi(IServiceCollection serviceCollection, IServiceProvider provider)
+        {
+            ServiceCollection = serviceCollection;
+            Provider = provider;
+        }
+    }
+
+    public class ContainerAdapter : IRegister, IFactory, IDisposable
     {
         private readonly IServiceCollection services;
-        public static IContainer Create()
+
+        public static IRegister Create()
         {
             var msDiContainer = new ContainerAdapter();
-            msDiContainer.RegisterInstance<IContainer>(msDiContainer);
+            msDiContainer.RegisterInstance<IFactory>(msDiContainer);
             return msDiContainer;
         }
+
+        public IFactory CreateFactory()
+        {
+            return this;
+        }
+
+        private ConcreteMsDi concrete;
+
+        public object Concrete => concrete;
 
         private ServiceProvider container;
 
@@ -28,8 +52,21 @@ namespace Our.Umbraco.Containers.MS.DI
         internal class Lazier<T> : Lazy<T> where T : class
         {
             public Lazier(IServiceProvider provider)
-                : base(() => provider.GetRequiredService<T>())
+                : base(() => ResolveService(provider))
             {
+            }
+
+            private static T ResolveService(IServiceProvider provider)
+            {
+                try
+                {
+                    var requiredService = provider.GetRequiredService<T>();
+                    return requiredService;
+                }
+                catch(Exception ex)
+                {
+                    throw new Exception("Failed to lazy initialize", ex);
+                }
             }
         }
 
@@ -44,7 +81,13 @@ namespace Our.Umbraco.Containers.MS.DI
             {
                 if (container == null)
                 {
+                    var serviceData = services.Select(x =>
+                        $"{x.ServiceType.Name}; {x.ImplementationType?.Name}; {x.ImplementationInstance?.GetType().Name}; {x.Lifetime}"
+                    );
+                    var all = String.Join(Environment.NewLine, serviceData);
+
                     container = services.BuildServiceProvider();
+                    concrete = new ConcreteMsDi(services, container);
                 }
 
                 return container;
@@ -53,7 +96,13 @@ namespace Our.Umbraco.Containers.MS.DI
 
         private void Reset()
         {
+            // With this we can 
             container = null;
+        }
+
+        public object CreateWithParameters(Type type, object[] args)
+        {
+            return ServiceProvider.GetService(type);
         }
 
         public object GetInstance(Type type)
@@ -83,12 +132,12 @@ namespace Our.Umbraco.Containers.MS.DI
             return ServiceProvider.GetServices(typeof(TService)).Cast<TService>();
         }
 
-        public IEnumerable<Registration> GetRegistered(Type serviceType)
-        {
-            return services
-                .Where(x => serviceType.IsAssignableFrom(x.ServiceType))
-                .Select(x => new Registration(x.ImplementationType ?? x.ServiceType, x.ImplementationType?.Name ?? x.ServiceType?.Name));
-        }
+        //public IEnumerable<Registration> GetRegistered(Type serviceType)
+        //{
+        //    return services
+        //        .Where(x => serviceType.IsAssignableFrom(x.ServiceType))
+        //        .Select(x => new Registration(x.ImplementationType ?? x.ServiceType, x.ImplementationType?.Name ?? x.ServiceType?.Name));
+        //}
 
         public void Release(object instance)
         {
@@ -116,7 +165,7 @@ namespace Our.Umbraco.Containers.MS.DI
             services.Add(new ServiceDescriptor(serviceType, implementingType, lifetimes[lifetime]));
         }
 
-        public void Register<TService>(Func<IContainer, TService> factory, Lifetime lifetime = Lifetime.Transient)
+        public void Register<TService>(Func<IFactory, TService> factory, Lifetime lifetime = Lifetime.Transient)
         {
             Reset();
             services.Add(new ServiceDescriptor(typeof(TService), sp => factory(this), lifetimes[lifetime]));
@@ -131,11 +180,20 @@ namespace Our.Umbraco.Containers.MS.DI
         public void RegisterAuto(Type serviceBaseType)
         {
             Reset();
-            services.Scan(scan => 
-                scan.FromApplicationDependencies()
-                    .AddClasses(x => x.AssignableTo(serviceBaseType))
-                    .AsImplementedInterfaces()
-            );
+            try
+            {
+                // TODO: Figure out if fallback registration is allowed. IE. What does MS. do with runtime generated views?
+                
+                //services.Scan(scan =>
+                //    scan.FromApplicationDependencies(x => x != null)
+                //        .AddClasses(x => x.AssignableTo(serviceBaseType))
+                //        .AsImplementedInterfaces()
+                //);
+            }
+            catch (Exception ex)
+            {
+                throw new BootFailedException("Autoregister failed", ex);
+            }
         }
 
         public IDisposable BeginScope()
@@ -143,18 +201,15 @@ namespace Our.Umbraco.Containers.MS.DI
             return ServiceProvider.CreateScope();
         }
 
-        public IContainer ConfigureForWeb()
+        public void ConfigureForWeb()
         {
             // TODO: Figure any dependency
-            return this;
         }
 
-        public IContainer EnablePerWebRequestScope()
+        public void EnablePerWebRequestScope()
         {
             // TODO: Figure any dependency;
-            return this;
         }
 
-        public object ConcreteContainer => ServiceProvider;
     }
 }

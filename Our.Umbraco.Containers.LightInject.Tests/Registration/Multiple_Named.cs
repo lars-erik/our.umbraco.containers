@@ -10,12 +10,12 @@ namespace Our.Umbraco.Containers.Tests.Registration
     [TestFixture]
     public class Resolving_Default_Abstractions_From_Multiple_Named_Registrations
     {
-        private IContainer container;
+        private IRegister container;
 
         [SetUp]
         public void Setup()
         {
-            container = ContainerFactory.Create();
+            container = RegisterFactory.Create();
         }
 
         [Test]

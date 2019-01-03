@@ -13,9 +13,9 @@ namespace Our.Umbraco.Containers.Castle
     /// </summary>
     public class WindsorControllerFactory : DefaultControllerFactory, IFilteredControllerFactory
     {
-        private readonly IContainer container;
+        private readonly IFactory container;
 
-        public WindsorControllerFactory(IContainer container)
+        public WindsorControllerFactory(IFactory container)
         {
             this.container = container;
         }
@@ -27,7 +27,7 @@ namespace Our.Umbraco.Containers.Castle
 
         public override void ReleaseController(IController controller)
         {
-            ((WindsorContainer)container.ConcreteContainer).Kernel.ReleaseComponent(controller);
+            ((WindsorContainer)container.Concrete).Kernel.ReleaseComponent(controller);
         }
 
         protected override IController GetControllerInstance(RequestContext requestContext, Type controllerType)

@@ -12,12 +12,13 @@ namespace Our.Umbraco.Containers.Tests.Registration
     [TestFixture]
     public class Resolving_Default_Abstractions_From_Multiple_Registrations
     {
-        private IContainer container;
+        private IRegister register;
+        private IFactory container;
 
         [SetUp]
         public void Setup()
         {
-            container = ContainerFactory.Create();
+            register = RegisterFactory.Create();
         }
 
         private void AssertDefaultInstance<TExpected>()
@@ -34,15 +35,15 @@ namespace Our.Umbraco.Containers.Tests.Registration
         [Test]
         public void Without_Registering_Service_Throws_InvalidOperationException()
         {
-            container.Register(typeof(Concrete));
-            container.Register(typeof(AnotherConcrete));
+            register.Register(typeof(Concrete));
+            register.Register(typeof(AnotherConcrete));
             AssertException<InvalidOperationException>();
         }
 
         private void RegisterServiceAndUnnamedTypes(Lifetime lifetime)
         {
-            container.Register(typeof(IAbstraction), typeof(Concrete), lifetime);
-            container.Register(typeof(IAbstraction), typeof(AnotherConcrete), lifetime);
+            register.Register(typeof(IAbstraction), typeof(Concrete), lifetime);
+            register.Register(typeof(IAbstraction), typeof(AnotherConcrete), lifetime);
         }
 
         [Test]
@@ -79,16 +80,16 @@ namespace Our.Umbraco.Containers.Tests.Registration
         [Test]
         public void Instances_Resolves_Last_Registered()
         {
-            container.RegisterInstance(typeof(IAbstraction), new Concrete());
-            container.RegisterInstance(typeof(IAbstraction), new AnotherConcrete());
+            register.RegisterInstance(typeof(IAbstraction), new Concrete());
+            register.RegisterInstance(typeof(IAbstraction), new AnotherConcrete());
             AssertDefaultInstance<AnotherConcrete>();
         }
 
         [Test]
         public void Factories_Transient_Resolves_Last_Registered()
         {
-            container.Register((Func<IContainer, IAbstraction>)(c => new Concrete()));
-            container.Register((Func<IContainer, IAbstraction>)(c => new AnotherConcrete()));
+            register.Register((Func<IFactory, IAbstraction>)(c => new Concrete()));
+            register.Register((Func<IFactory, IAbstraction>)(c => new AnotherConcrete()));
             AssertDefaultInstance<AnotherConcrete>();
         }
     }

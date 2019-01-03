@@ -20,13 +20,24 @@ using Umbraco.Core.Composing;
 
 namespace Our.Umbraco.Containers.Castle
 {
-    public class CastleContainer : IContainer
+    public class Registration
+    {
+        public Type Type { get; set; }
+        public string Name { get; set; }
+        public Registration(Type type, string name)
+        {
+            Type = type;
+            Name = name;
+        }
+    }
+
+    public class CastleContainer : IRegister, IFactory, IDisposable
     {
         // fixme - creates a cyclic dependency with castle
-        public static IContainer Create()
+        public static IRegister Create()
         {
             var castleContainer = new CastleContainer();
-            castleContainer.RegisterInstance<IContainer>(castleContainer);
+            //castleContainer.RegisterInstance<I>(castleContainer);
             return castleContainer;
         }
 
@@ -40,7 +51,12 @@ namespace Our.Umbraco.Containers.Castle
 
         private WindsorContainer container;
 
-        public object ConcreteContainer => container;
+        public object CreateWithParameters(Type type, object[] args)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object Concrete => container;
 
         public CastleContainer()
         {
@@ -52,6 +68,11 @@ namespace Our.Umbraco.Containers.Castle
         public void Dispose()
         {
             container.Dispose();
+        }
+
+        public IFactory CreateFactory()
+        {
+            return this;
         }
 
         public object GetInstance(Type type)
@@ -177,7 +198,7 @@ namespace Our.Umbraco.Containers.Castle
 
         // fixme - Must make TService reference type in interface
         // fixme - Umbraco re-registers IProfiler for instance. Must set new registrations as default. (?)
-        public void Register<TService>(Func<IContainer, TService> factory, Lifetime lifetime = Lifetime.Transient)
+        public void Register<TService>(Func<IFactory, TService> factory, Lifetime lifetime = Lifetime.Transient)
         {
             container.Register(
                 NewDefault(
@@ -185,14 +206,14 @@ namespace Our.Umbraco.Containers.Castle
                     lifetime,
                     typeof(TService).Name + "-impl-" + Guid.NewGuid().ToString("N")
                 )
-                .UsingFactory<IContainer, TService>(f => factory(this))
+                .UsingFactory<IFactory, TService>(f => factory(this))
             );
 
         }
 
         // fixme - Must make TService reference type in interface
         // fixme - Umbraco re-registers IProfiler for instance. Must set new registrations as default. (?)
-        public void Register<TService>(Func<IContainer, TService> factory, string name, Lifetime lifetime = Lifetime.Transient)
+        public void Register<TService>(Func<IFactory, TService> factory, string name, Lifetime lifetime = Lifetime.Transient)
         {
             container.Register(
                 NewDefault(
@@ -200,7 +221,7 @@ namespace Our.Umbraco.Containers.Castle
                     lifetime,
                     name
                 )
-                .UsingFactory<IContainer, TService>(f => factory(this))
+                .UsingFactory<IFactory, TService>(f => factory(this))
             );
 
         }
@@ -253,7 +274,7 @@ namespace Our.Umbraco.Containers.Castle
         }
 
         // fixme - Figure out requirements
-        public IContainer ConfigureForWeb()
+        public void ConfigureForWeb()
         {
             //Register<IFilteredControllerFactory>(x => new WindsorControllerFactory(this), Lifetime.Singleton);
 
@@ -262,14 +283,11 @@ namespace Our.Umbraco.Containers.Castle
             GlobalConfiguration.Configuration.Services.Replace(
                 typeof(IHttpControllerActivator),
                 new WindsorCompositionRoot(this.container));
-
-            return this;
         }
 
         // fixme - Figure out if this is on by default and how to set it.
-        public IContainer EnablePerWebRequestScope()
+        public void EnablePerWebRequestScope()
         {
-            return this;
         }
     }
 }
