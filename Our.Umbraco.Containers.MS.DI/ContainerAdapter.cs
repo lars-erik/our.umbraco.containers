@@ -83,10 +83,7 @@ namespace Our.Umbraco.Containers.MS.DI
             {
                 if (container == null)
                 {
-                    var serviceData = services.Select(x =>
-                        $"{x.ServiceType.Name}; {x.ImplementationType?.Name}; {x.ImplementationInstance?.GetType().Name}; {x.Lifetime}"
-                    );
-                    var all = String.Join(Environment.NewLine, serviceData);
+                    var all = ServicesTable();
 
                     container = services.BuildServiceProvider();
                     concrete = new ConcreteMsDi(services, container);
@@ -99,6 +96,21 @@ namespace Our.Umbraco.Containers.MS.DI
 
                 return container;
             }
+        }
+
+        private string ServicesTable()
+        {
+            var serviceData = ServicesLines();
+            var all = String.Join(Environment.NewLine, serviceData);
+            return all;
+        }
+
+        private IEnumerable<string> ServicesLines()
+        {
+            var serviceData = services.Select(x =>
+                $"{x.ServiceType.Name}; {x.ImplementationType?.Name}; {x.ImplementationInstance?.GetType().Name}; {x.Lifetime}"
+            );
+            return serviceData;
         }
 
         private void Reset()
