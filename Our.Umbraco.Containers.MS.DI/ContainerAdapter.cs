@@ -246,7 +246,7 @@ namespace Our.Umbraco.Containers.MS.DI
         public void ConfigureForWeb()
         {
             // TODO: Figure any dependency
-            //GlobalConfiguration.Configuration.DependencyResolver = new MsDiWebApiDependencyResolver(this);
+            GlobalConfiguration.Configuration.DependencyResolver = new MsDiWebApiDependencyResolver(this);
 
             System.Web.Mvc.DependencyResolver.SetResolver(new MsDiDependencyResolver(this));
 
