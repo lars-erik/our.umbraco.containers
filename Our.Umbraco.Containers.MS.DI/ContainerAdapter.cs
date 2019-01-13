@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
+using System.Web.Http;
+using System.Web.Http.Controllers;
+using System.Web.Http.Dependencies;
+using System.Web.Http.Dispatcher;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyModel;
 using Umbraco.Core.Composing;
@@ -42,7 +47,7 @@ namespace Our.Umbraco.Containers.MS.DI
 
         public object Concrete => concrete;
 
-        private ServiceProvider container;
+        private IServiceProvider container;
 
         public ContainerAdapter()
         {
@@ -241,6 +246,14 @@ namespace Our.Umbraco.Containers.MS.DI
         public void ConfigureForWeb()
         {
             // TODO: Figure any dependency
+            //GlobalConfiguration.Configuration.DependencyResolver = new MsDiWebApiDependencyResolver(this);
+
+            System.Web.Mvc.DependencyResolver.SetResolver(new MsDiDependencyResolver(this));
+
+            GlobalConfiguration.Configuration.Services.Replace(
+                typeof(IHttpControllerActivator),
+                new MsDiActivator(this));
+
         }
 
         public void EnablePerWebRequestScope()
@@ -248,7 +261,7 @@ namespace Our.Umbraco.Containers.MS.DI
             // TODO: Figure any dependency;
         }
 
-        class ScopeWrapper : IServiceProvider, IDisposable
+        class ScopeWrapper : IServiceProvider, IDisposable, IDependencyScope
         {
             private IServiceScope scope;
             private readonly ContainerAdapter adapter;
@@ -271,6 +284,77 @@ namespace Our.Umbraco.Containers.MS.DI
             {
                 return provider.GetService(serviceType);
             }
+
+            public IEnumerable<object> GetServices(Type serviceType)
+            {
+                return provider.GetServices(serviceType);
+            }
         }
+
+        public class MsDiActivator : IHttpControllerActivator
+        {
+            private readonly ContainerAdapter container;
+
+            public MsDiActivator(ContainerAdapter container)
+            {
+                this.container = container;
+            }
+
+            public IHttpController Create(HttpRequestMessage request, HttpControllerDescriptor controllerDescriptor, Type controllerType)
+            {
+                return (IHttpController)container.ServiceProvider.GetRequiredService(controllerType);
+            }
+        }
+
+        public class MsDiDependencyResolver : System.Web.Mvc.IDependencyResolver
+        {
+            private readonly ContainerAdapter container;
+
+            public MsDiDependencyResolver(ContainerAdapter container)
+            {
+                this.container = container;
+            }
+
+            public object GetService(Type serviceType)
+            {
+                return container.GetInstance(serviceType);
+            }
+
+            public IEnumerable<object> GetServices(Type serviceType)
+            {
+                return container.GetAllInstances(serviceType).Cast<object>();
+            }
+
+        }
+
+        public class MsDiWebApiDependencyResolver : System.Web.Http.Dependencies.IDependencyResolver
+        {
+            private readonly ContainerAdapter container;
+
+            public MsDiWebApiDependencyResolver(ContainerAdapter container)
+            {
+                this.container = container;
+            }
+
+            public void Dispose()
+            {
+            }
+
+            public object GetService(Type serviceType)
+            {
+                return container.ServiceProvider.GetService(serviceType);
+            }
+
+            public IEnumerable<object> GetServices(Type serviceType)
+            {
+                return container.ServiceProvider.GetServices(serviceType);
+            }
+
+            public IDependencyScope BeginScope()
+            {
+                return (IDependencyScope)container.BeginScope();
+            }
+        }
+
     }
 }
